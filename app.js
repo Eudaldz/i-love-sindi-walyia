@@ -106,12 +106,30 @@ const bg = document.getElementById("bg");
 
 const debugBtn = document.getElementById("debugBtn");
 
-const bgm = document.getElementById("bgm");
-const countdownBgm = document.getElementById("countdownBgm"); // optional if you added it
-const bellSfx = document.getElementById("bellSfx");           // optional if you added it
-const outroBgm = document.getElementById("outroBgm");
+// We'll create these with `new Audio(...)` on first user interaction
+let bgm = null;
+let countdownBgm = null;
+let bellSfx = null;
+let outroBgm = null;
 
 const audioBtn = document.getElementById("audioBtn");
+
+let audioInitialized = false;
+
+function initAudio() {
+  if (audioInitialized) return;
+  audioInitialized = true;
+
+  // IMPORTANT: paths must match your actual files
+  bgm = new Audio("assets/songs/background.mp3");
+  bgm.loop = true;
+
+  countdownBgm = new Audio("assets/songs/countdown_music.mp3");
+  bellSfx = new Audio("assets/sounds/bell.mp3");
+  outroBgm = new Audio("assets/songs/outro_song.mp3");
+
+  console.log("[AUDIO] objects initialized");
+}
 
 const bbLeft = document.getElementById("bbLeft");
 const bbRight = document.getElementById("bbRight");
@@ -399,23 +417,28 @@ function orchestrate(remainingSec) {
   }
 }
 
-async function startCountdownMusicPhase() {
+function startCountdownMusicPhase() {
   phase = PHASE.COUNTDOWN_MUSIC;
 
-  // Switch music track if provided
   try {
     if (bgm) {
       bgm.pause();
       bgm.currentTime = 0;
     }
 
-    if (countdownBgm) {
-      countdownBgm.currentTime = 0;
-      countdownBgm.loop = false;
-      await countdownBgm.play();
+    if (!countdownBgm) {
+      console.warn("[AUDIO] countdownBgm not initialized yet");
+      return;
+    }
+
+    countdownBgm.currentTime = 0;
+    countdownBgm.loop = false;
+    const p = countdownBgm.play();
+    if (p && p.then) {
+      p.catch(err => console.warn("[AUDIO] countdownBgm.play blocked:", err));
     }
   } catch (e) {
-    // Autoplay may be blocked until user gesture; visuals still continue.
+    console.warn("[AUDIO] countdownBgm error:", e);
   }
 }
 
@@ -570,13 +593,19 @@ function showSkyWord(word) {
 }
 
 function playBell() {
-  if (!bellSfx) return;
+  if (!bellSfx) {
+    console.warn("[AUDIO] bellSfx not initialized yet");
+    return;
+  }
   try {
     bellSfx.currentTime = 0;
-    bellSfx.play();
-    audioOn = true; 
-    audioBtn.textContent = "𝆕 On";
-  } catch (e) {}
+    const p = bellSfx.play();
+    if (p && p.then) {
+      p.catch(err => console.warn("[AUDIO] bellSfx.play failed:", err));
+    }
+  } catch (e) {
+    console.warn("[AUDIO] bellSfx error:", e);
+  }
 }
 
 /* =============================================================================
@@ -753,21 +782,19 @@ bg.onload = () => {
 window.addEventListener("resize", applyAllTransforms);
 
 /* =============================================================================
-   12) AUDIO TOGGLE (tap anywhere outside HUD)
+   12) AUDIO TOGGLE (tap anywhere outside HUD) — WITH LAZY AUDIO INIT
    ========================================================================== */
 
 let audioOn = false;
 
-/**
- * Start background music in a mobile-safe way.
- * Called directly from user gesture handlers (no async/await there).
- */
 function startAudio() {
-  if (!bgm) return;
+  if (!bgm) {
+    console.warn("[AUDIO] bgm not initialized");
+    return;
+  }
 
   try {
     const p = bgm.play();
-
     if (p && p.then) {
       p.then(() => {
         audioOn = true;
@@ -779,7 +806,6 @@ function startAudio() {
         audioBtn.textContent = "𝆕 Off";
       });
     } else {
-      // Non-promise browsers
       audioOn = true;
       audioBtn.textContent = "𝆕 On";
       console.log("[AUDIO] bgm started (no promise)");
@@ -803,10 +829,6 @@ function stopAudio() {
   audioBtn.textContent = "𝆕 Off";
 }
 
-/**
- * Returns true if the click/tap was on HUD controls
- * (so we don't toggle audio for those in the global pointer handler).
- */
 function isSceneControl(target) {
   return (
     target === prevBtn ||
@@ -816,30 +838,20 @@ function isSceneControl(target) {
   );
 }
 
-/**
- * Explicit audio button: toggles bgm directly.
- * NO async/await here so bgm.play() is seen as user-gesture on mobile.
- */
+// Audio button: init audio (if needed) and toggle bgm
 audioBtn.addEventListener("click", () => {
-  if (!audioOn) {
-    startAudio();
-  } else {
-    stopAudio();
-  }
+  initAudio();          // <-- Audio objects created here, inside user action
+  if (!audioOn) startAudio();
+  else stopAudio();
 });
 
-/**
- * Global tap anywhere outside HUD also toggles audio.
- * Again: handler is sync, no await, so mobile considers play() user-initiated.
- */
+// Tap anywhere outside HUD also toggles bgm
 window.addEventListener("pointerdown", (e) => {
   if (isSceneControl(e.target)) return;
 
-  if (!audioOn) {
-    startAudio();
-  } else {
-    stopAudio();
-  }
+  initAudio();          // <-- Same pattern here
+  if (!audioOn) startAudio();
+  else stopAudio();
 });
 
 /* The rest of your audio helpers stay the same: stopAllAudio(), renderFinalBillboards(), playOutro() */
@@ -869,14 +881,20 @@ function renderFinalBillboards() {
   }
 }
 
-async function playOutro() {
-  if (!outroBgm) return;
+function playOutro() {
+  if (!outroBgm) {
+    console.warn("[AUDIO] outroBgm not initialized yet");
+    return;
+  }
   try {
     outroBgm.currentTime = 0;
     outroBgm.loop = false;
-    await outroBgm.play();
+    const p = outroBgm.play();
+    if (p && p.then) {
+      p.catch(err => console.warn("[AUDIO] outroBgm.play blocked:", err));
+    }
   } catch (e) {
-    console.warn("Outro audio blocked until user gesture:", e);
+    console.warn("[AUDIO] outroBgm error:", e);
   }
 }
 /* =============================================================================
