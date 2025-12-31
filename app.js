@@ -758,58 +758,55 @@ window.addEventListener("resize", applyAllTransforms);
 
 let audioOn = false;
 
-let audioUnlocked = false;
-
-async function unlockAllHtmlAudio() {
-  if (audioUnlocked) return true;
-
-  const audios = [bgm, countdownBgm, bellSfx, outroBgm].filter(Boolean);
+/**
+ * Start background music in a mobile-safe way.
+ * Called directly from user gesture handlers (no async/await there).
+ */
+function startAudio() {
+  if (!bgm) return;
 
   try {
-    // "Touch" each audio in a user gesture so future play() from timers works.
-    for (const a of audios) {
-      a.load();                 // make sure it's ready
-      a.muted = true;           // avoid audible pop
-      const p = a.play();       // may return a promise
-      if (p?.then) await p;
-      a.pause();
-      a.currentTime = 0;
-      a.muted = false;
+    const p = bgm.play();
+
+    if (p && p.then) {
+      p.then(() => {
+        audioOn = true;
+        audioBtn.textContent = "𝆕 On";
+        console.log("[AUDIO] bgm started");
+      }).catch(err => {
+        console.warn("[AUDIO] bgm.play() failed:", err);
+        audioOn = false;
+        audioBtn.textContent = "𝆕 Off";
+      });
+    } else {
+      // Non-promise browsers
+      audioOn = true;
+      audioBtn.textContent = "𝆕 On";
+      console.log("[AUDIO] bgm started (no promise)");
     }
-
-    audioUnlocked = true;
-    console.warn("[AUDIO] unlocked");
-    return true;
-  } catch (e) {
-    console.warn("[AUDIO] unlock failed:", e);
-    return false;
-  }
-}
-
-async function startAudio() {
-  try {
-    await bgm.play(); // must be called from a user gesture
-    audioOn = true;
-    audioBtn.textContent = "𝆕 On";
   } catch (err) {
-    console.warn("Audio blocked until user gesture:", err);
+    console.warn("[AUDIO] bgm.play() threw:", err);
     audioOn = false;
     audioBtn.textContent = "𝆕 Off";
   }
 }
 
 function stopAudio() {
-  if (bgm) bgm.pause();
+  if (bgm) {
+    try {
+      bgm.pause();
+    } catch (e) {
+      console.warn("[AUDIO] bgm.pause() failed:", e);
+    }
+  }
   audioOn = false;
   audioBtn.textContent = "𝆕 Off";
 }
 
-audioBtn.addEventListener("click", async () => {
-  await unlockAllHtmlAudio();
-  if (!audioOn) await startAudio();
-  else stopAudio();
-});
-
+/**
+ * Returns true if the click/tap was on HUD controls
+ * (so we don't toggle audio for those in the global pointer handler).
+ */
 function isSceneControl(target) {
   return (
     target === prevBtn ||
@@ -819,15 +816,33 @@ function isSceneControl(target) {
   );
 }
 
-window.addEventListener("pointerdown", async (e) => {
-  if (isSceneControl(e.target)) return;
-
-  await unlockAllHtmlAudio();
-
-  if (!audioOn) await startAudio();
-  else stopAudio();
+/**
+ * Explicit audio button: toggles bgm directly.
+ * NO async/await here so bgm.play() is seen as user-gesture on mobile.
+ */
+audioBtn.addEventListener("click", () => {
+  if (!audioOn) {
+    startAudio();
+  } else {
+    stopAudio();
+  }
 });
 
+/**
+ * Global tap anywhere outside HUD also toggles audio.
+ * Again: handler is sync, no await, so mobile considers play() user-initiated.
+ */
+window.addEventListener("pointerdown", (e) => {
+  if (isSceneControl(e.target)) return;
+
+  if (!audioOn) {
+    startAudio();
+  } else {
+    stopAudio();
+  }
+});
+
+/* The rest of your audio helpers stay the same: stopAllAudio(), renderFinalBillboards(), playOutro() */
 function stopAllAudio() {
   try { if (bgm) { bgm.pause(); bgm.currentTime = 0; } } catch {}
   try { if (countdownBgm) { countdownBgm.pause(); countdownBgm.currentTime = 0; } } catch {}
@@ -864,7 +879,6 @@ async function playOutro() {
     console.warn("Outro audio blocked until user gesture:", e);
   }
 }
-
 /* =============================================================================
    13) INIT
    ========================================================================== */
