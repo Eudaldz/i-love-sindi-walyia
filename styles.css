@@ -315,9 +315,3 @@ html, body {
   pointer-events: none;
   z-index: 50;
 }
-
-#debugBtn {
-  display: inline-block !important;
-  background: rgba(255, 80, 80, 0.35);
-  border: 1px solid rgba(255,255,255,0.25);
-}
