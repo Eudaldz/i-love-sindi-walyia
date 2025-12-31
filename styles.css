@@ -1,0 +1,323 @@
+:root {
+  --hud-pad: 12px;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* Full-screen app */
+#app {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+/* Background fills screen */
+#bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  z-index: 0;
+}
+
+/* Stars overlay (dim + twinkle) */
+#stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.25;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 50% 50%, rgba(255,255,255,.7), transparent 60%);
+  animation: twinkle 3.5s ease-in-out infinite alternate;
+  filter: blur(.2px);
+  z-index: 1;
+}
+
+@keyframes twinkle {
+  from { opacity: .18; transform: translateY(0px); }
+  to   { opacity: .32; transform: translateY(-1px); }
+}
+
+/* Canvases */
+#fx, #wind {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2; /* above stars, below overlays */
+}
+
+/* Show only top part of the fireworks canvas */
+#fx {
+  clip-path: inset(0 0 1% 0); /* hide bottom 35% */
+  height: 50%;
+}
+
+#fx { opacity: 0.75; } /* try 0.55–0.85 */
+
+#overlays {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Billboard overlay container (we'll apply matrix3d to this) */
+.billboard {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;   /* dummy; replaced by transform */
+  height: 200px;  /* dummy; replaced by transform */
+  transform-origin: 0 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Inner content is a normal rectangle; container gets warped */
+.billboard-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 0px;
+  overflow: hidden;
+
+  /* Make these animatable */
+  background-color: rgba(255,255,255,0.95);
+  backdrop-filter: blur(2px);
+  transition: background-color 800ms ease, backdrop-filter 800ms ease;
+}
+
+/* Billboard color modes */
+.billboard-inner.is-black {
+  background-color: rgba(0,0,0,1);
+  backdrop-filter: blur(0px);
+}
+
+.billboard-inner.is-white {
+  background-color: rgba(255,255,255,0.95);
+}
+
+.billboard-inner > * {
+  transition: opacity 700ms ease;
+}
+
+.billboard-inner.is-black > * {
+  opacity: 0;
+}
+
+/* Big centered number for bell strikes */
+.bb-number {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 64px;
+  font-weight: 900;
+  color: #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Photo billboard fade effect */
+.photo-rotator {
+  width: 100%;
+  height: 100%;
+  background: #fff; /* white base for fade-out */
+  overflow: hidden;
+}
+
+.photo-fade {
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.6s ease;
+  opacity: 1;
+}
+
+.photo-fade.fade-out {
+  opacity: 0;
+}
+
+.photo-rotator img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* (Your .countdown is currently unused, but harmless) */
+.countdown {
+  width: 100%;
+  height: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  text-shadow: none;
+}
+
+.countdown .big {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #000;
+}
+
+.countdown .small {
+  font-size: 14px;
+  opacity: 0.9;
+  color: #333;
+}
+
+.sg-header {
+  font-size: 24px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.sg-time {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6%;
+  padding: 10% 0;
+  box-sizing: border-box;
+  color: #000;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none;
+}
+
+.sg-row {
+  font-size: 44px;
+}
+
+.bb-final {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+
+  color: #000;
+  font-weight: 800;
+  font-size: 36px;
+  line-height: 1.15;
+  letter-spacing: 0.5px;
+}
+
+.bb-final .sub {
+  font-weight: 700;
+  font-size: 30px;
+}
+
+.bb-final .heart {
+  font-weight: 900;
+}
+
+#skyText {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 50%;
+  pointer-events: none;
+
+  display: grid;
+  /* lower than before: start center-ish instead of top */
+  place-items: center;
+  padding-top: 0vh;   /* <-- lower height; tweak 24–35vh */
+  box-sizing: border-box;
+
+  color: rgba(255, 220, 80, 0.95);
+  font-size: 56px;     /* <-- bigger letters; tweak 36–56px */
+  font-weight: 300;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+
+  /* IMPORTANT: default hidden */
+  opacity: 0;
+
+  /* Fade timing controlled by class */
+  transition: opacity 1000ms ease;
+  text-shadow:
+    0 0 10px rgba(255, 220, 80, 0.22),
+    0 0 22px rgba(255, 220, 80, 0.16),
+    0 6px 16px rgba(0,0,0,0.55);
+}
+
+/* Shown state (instant appear handled in JS by disabling transition briefly) */
+#skyText.show { opacity: 1; }
+
+/* Fading out state */
+#skyText.fade { opacity: 0; }
+
+/* HUD */
+#hud {
+  position: absolute;
+  left: var(--hud-pad);
+  right: var(--hud-pad);
+  bottom: var(--hud-pad);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+#hud button {
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.9);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+#sceneLabel {
+  color: rgba(255,255,255,0.9);
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+/* Wind overlay */
+#windOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 75vh;
+  top: 25vh;
+
+  object-fit: contain; /* was fill; contain avoids distortion */
+  pointer-events: none;
+  z-index: 50;
+}
+
+#debugBtn {
+  display: inline-block !important;
+  background: rgba(255, 80, 80, 0.35);
+  border: 1px solid rgba(255,255,255,0.25);
+}

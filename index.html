@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>NYE Wallpaper</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="favicon.ico">
+</head>
+
+<body>
+  <div id="app">
+    <!-- Background image -->
+    <img id="bg" alt="background" />
+
+    <!-- Starry sky overlay (dim) -->
+    <div id="stars"></div>
+
+    <!-- Fireworks -->
+    <canvas id="fx"></canvas>
+
+    <!-- (Optional) Wind canvas (currently unused if you use windOverlay frames) -->
+    <canvas id="wind"></canvas>
+
+    <!-- Billboard overlays (transformed) -->
+    <div id="overlays">
+      <div id="bbLeft" class="billboard">
+        <div class="billboard-inner" id="bbLeftInner"></div>
+      </div>
+
+      <div id="bbRight" class="billboard">
+        <div class="billboard-inner" id="bbRightInner"></div>
+      </div>
+
+      <!-- Sky message layer -->
+      <div id="skyText"></div>
+    </div>
+
+    <!-- Wind overlay frames -->
+    <img id="windOverlay" alt="" />
+
+    <!-- Simple UI -->
+    <div id="hud">
+      <button id="prevBtn" aria-label="Previous scene">◀</button>
+      <span id="sceneLabel" aria-live="polite"></span>
+      <button id="nextBtn" aria-label="Next scene">▶</button>
+      <button id="audioBtn" aria-label="Toggle audio">𝆕 Off</button>
+      <button id="debugBtn" style="display:none">⚙ Debug</button>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="bgm" preload="auto" loop playsinline>
+    <source src="assets/songs/background.mp3" type="audio/mpeg" />
+  </audio>
+
+  <audio id="countdownBgm" preload="auto" playsinline>
+    <source src="assets/songs/countdown_music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <audio id="bellSfx" preload="auto" playsinline>
+    <source src="assets/sounds/bell.mp3" type="audio/mpeg" />
+  </audio>
+
+  <audio id="outroBgm" preload="auto" playsinline>
+    <source src="assets/songs/outro_song.mp3" type="audio/mpeg" />
+  </audio>
+  <script src="https://cdn.jsdelivr.net/npm/fireworks-js@2.x/dist/index.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
