@@ -758,6 +758,34 @@ window.addEventListener("resize", applyAllTransforms);
 
 let audioOn = false;
 
+let audioUnlocked = false;
+
+async function unlockAllHtmlAudio() {
+  if (audioUnlocked) return true;
+
+  const audios = [bgm, countdownBgm, bellSfx, outroBgm].filter(Boolean);
+
+  try {
+    // "Touch" each audio in a user gesture so future play() from timers works.
+    for (const a of audios) {
+      a.load();                 // make sure it's ready
+      a.muted = true;           // avoid audible pop
+      const p = a.play();       // may return a promise
+      if (p?.then) await p;
+      a.pause();
+      a.currentTime = 0;
+      a.muted = false;
+    }
+
+    audioUnlocked = true;
+    console.warn("[AUDIO] unlocked");
+    return true;
+  } catch (e) {
+    console.warn("[AUDIO] unlock failed:", e);
+    return false;
+  }
+}
+
 async function startAudio() {
   try {
     await bgm.play(); // must be called from a user gesture
@@ -777,6 +805,7 @@ function stopAudio() {
 }
 
 audioBtn.addEventListener("click", async () => {
+  await unlockAllHtmlAudio();
   if (!audioOn) await startAudio();
   else stopAudio();
 });
@@ -792,6 +821,8 @@ function isSceneControl(target) {
 
 window.addEventListener("pointerdown", async (e) => {
   if (isSceneControl(e.target)) return;
+
+  await unlockAllHtmlAudio();
 
   if (!audioOn) await startAudio();
   else stopAudio();
